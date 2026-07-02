@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Text to Video AI Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c26;
+      --border: rgba(255,255,255,0.08);
+      --border-strong: rgba(255,255,255,0.15);
+      --text: #f0f0f5;
+      --text-muted: #888899;
+      --accent: #7c5cfc;
+      --accent-glow: rgba(124,92,252,0.25);
+      --accent2: #c084fc;
+      --green: #22d3a5;
+      --red: #f87171;
+      --amber: #fbbf24;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10,10,15,0.85);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(124,92,252,0.18);
+      color: var(--accent2);
+      border: 1px solid rgba(124,92,252,0.3);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 4rem 1.5rem 2rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1rem;
+      color: var(--text-muted);
+      max-width: 480px;
+      margin: 0 auto 1.5rem;
+      line-height: 1.6;
+    }
+
+    /* ── Main Layout ── */
+    main {
+      flex: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 1.5rem 4rem;
+      width: 100%;
+    }
+
+    /* ── API Key Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .api-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    textarea,
+    select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 96px;
+      line-height: 1.6;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: #6b4ef0; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover { border-color: var(--border-strong); color: var(--text); }
+
+    /* ── Grid options ── */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    /* ── Generate Button ── */
+    .generate-wrap {
+      text-align: center;
+      margin: 0.5rem 0 1.5rem;
+    }
+
+    .btn-generate {
+      padding: 14px 40px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+      box-shadow: 0 0 24px var(--accent-glow);
+    }
+
+    .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 0 36px var(--accent-glow); }
+    .btn-generate:active { transform: translateY(0); }
+    .btn-generate:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ── Status & Progress ── */
+    .status-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+
+    .status-box.visible { display: block; }
+
+    .status-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 0.75rem;
+    }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-pulse {
+      background: var(--accent);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    .dot-success { background: var(--green); }
+    .dot-error   { background: var(--red); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.75); }
+    }
+
+    .progress-bar-wrap {
+      background: var(--surface2);
+      border-radius: 999px;
+      height: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 999px;
+      transition: width 0.5s ease;
+    }
+
+    .status-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ── Result ── */
+    .result-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .result-box.visible { display: block; }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-label {
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    video {
+      width: 100%;
+      display: block;
+      background: #000;
+      max-height: 480px;
+    }
+
+    .result-footer {
+      padding: 1rem 1.25rem;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── How it works ── */
+    .how-section {
+      margin-top: 2.5rem;
+      border-top: 1px solid var(--border);
+      padding-top: 2rem;
+    }
+
+    .how-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .step-num {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .step-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ── History ── */
+    .history-section {
+      margin-top: 2rem;
+      display: none;
+    }
+
+    .history-section.visible { display: block; }
+
+    .history-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 1rem;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .history-status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .history-prompt {
+      flex: 1;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-time {
+      color: var(--text-muted);
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    footer a { color: var(--accent2); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .options-grid { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; }
+      header { padding: 1rem; }
+      .hero { padding: 2.5rem 1rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🎬</div>
+    <span>VideoGen AI</span>
+    <span class="badge">Free</span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <span id="api-indicator" style="font-size:12px;color:var(--text-muted);">No API key set</span>
+    <div id="api-dot" class="dot" style="background:var(--text-muted);"></div>
+  </div>
+</header>
+
+<div class="hero">
+  <h1>Turn text into video<br/>with AI</h1>
+  <p>Describe any scene and watch it come to life. Powered by Luma Dream Machine — free tier included.</p>
+</div>
+
+<main>
+
+  <!-- API Key -->
+  <div class="card">
+    <div class="card-title">🔑 Luma AI API Key</div>
+    <div class="api-row">
+      <input type="password" id="api-key-input" placeholder="Paste your Luma AI API key (lumaai-...)" />
+      <button class="btn btn-ghost" onclick="saveKey()">Save</button>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">
+      Get a free key at <a href="https://lumalabs.ai/dream-machine/api" target="_blank" style="color:var(--accent2);">lumalabs.ai</a> — no credit card needed for the free tier.
+    </p>
+  </div>
+
+  <!-- Prompt -->
+  <div class="card">
+    <div class="card-title">✍️ Describe your video</div>
+    <textarea id="prompt" placeholder="A futuristic city at sunset with flying cars, cinematic lighting, ultra detailed..."></textarea>
+
+    <div class="options-grid" style="margin-top:1rem;">
+      <div>
+        <label class="field-label">Aspect ratio</label>
+        <select id="aspect">
+          <option value="16:9">16:9 — Landscape</option>
+          <option value="9:16">9:16 — Portrait / Reel</option>
+          <option value="1:1">1:1 — Square</option>
+          <option value="4:3">4:3 — Classic</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Duration</label>
+        <select id="duration">
+          <option value="5">5 seconds</option>
+          <option value="10">10 seconds</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generate Button -->
+  <div class="generate-wrap">
+    <button class="btn-generate" id="gen-btn" onclick="generateVideo()">
+      ✦ Generate Video
+    </button>
+  </div>
+
+  <!-- Status -->
+  <div class="status-box" id="status-box">
+    <div class="status-header">
+      <div class="dot dot-pulse" id="status-dot"></div>
+      <span id="status-title" style="font-size:14px;font-weight:500;">Generating…</span>
+    </div>
+    <div class="progress-bar-wrap" style="margin-bottom:10px;">
+      <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+    </div>
+    <div class="status-text" id="status-text">Submitting your prompt to Luma AI…</div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-box" id="result-box">
+    <div class="result-header">
+      <span class="result-label">🎥 Your generated video</span>
+      <span id="result-meta" style="font-size:12px;color:var(--text-muted);"></span>
+    </div>
+    <video id="result-video" controls playsinline></video>
+    <div class="result-footer">
+      <button class="btn btn-ghost" onclick="downloadVideo()">⬇ Download</button>
+      <button class="btn btn-ghost" onclick="shareVideo()">↗ Share link</button>
+      <button class="btn btn-primary" onclick="resetForm()">+ New video</button>
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <div class="how-section">
+    <div class="how-title">How it works</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-text">Paste your free Luma AI API key. No billing setup needed on the free tier.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-text">Write a detailed prompt describing your scene — lighting, mood, style, movement.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-text">Hit Generate. The AI renders your video in ~60–90 seconds and you can download it.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="history-section" id="history-section">
+    <div class="history-title">Recent generations</div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+
+</main>
+
+<footer>
+  <span>VideoGen AI — built with <a href="https://lumalabs.ai" target="_blank">Luma Dream Machine</a></span>
+  <span>Your key is stored only in your browser</span>
+</footer>
+
+<script>
+  const API_KEY_STORAGE = 'videogen_luma_key';
+  let apiKey = localStorage.getItem(API_KEY_STORAGE) || '';
+  let currentVideoUrl = '';
+  let history = JSON.parse(localStorage.getItem('videogen_history') || '[]');
+
+  function init() {
+    if (apiKey) {
+      document.getElementById('api-key-input').value = apiKey;
+      setApiIndicator(true);
+    }
+    renderHistory();
+  }
+
+  function saveKey() {
+    const val = document.getElementById('api-key-input').value.trim();
+    if (!val) { alert('Please paste your API key.'); return; }
+    apiKey = val;
+    localStorage.setItem(API_KEY_STORAGE, val);
+    setApiIndicator(true);
+  }
+
+  function setApiIndicator(active) {
+    document.getElementById('api-indicator').textContent = active ? 'API key saved' : 'No API key set';
+    document.getElementById('api-dot').style.background = active ? 'var(--green)' : 'var(--text-muted)';
+  }
+
+  function setStatus(title, text, progress, state) {
+    const box = document.getElementById('status-box');
+    box.classList.add('visible');
+    document.getElementById('status-title').textContent = title;
+    document.getElementById('status-text').textContent = text;
+    document.getElementById('progress-bar').style.width = progress + '%';
+    const dot = document.getElementById('status-dot');
+    dot.className = 'dot ' + (state === 'error' ? 'dot-error' : state === 'done' ? 'dot-success' : 'dot-pulse');
+  }
+
+  async function generateVideo() {
+    if (!apiKey) { alert('Please save your Luma AI API key first.'); return; }
+    const prompt = document.getElementById('prompt').value.trim();
+    if (!prompt) { alert('Please describe your video first.'); return; }
+
+    const aspect = document.getElementById('aspect').value;
+    const duration = parseInt(document.getElementById('duration').value);
+
+    document.getElementById('gen-btn').disabled = true;
+    document.getElementById('result-box').classList.remove('visible');
+    setStatus('Submitting…', 'Sending your prompt to Luma AI…', 10, 'loading');
+
+    const genEntry = {
+      id: Date.now(),
+      prompt: prompt,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'generating',
+      videoUrl: null
+    };
+    history.unshift(genEntry);
+    saveHistory();
+    renderHistory();
+
+    try {
+      // Create generation
+      const createRes = await fetch('https://api.lumalabs.ai/dream-machine/v1/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + apiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          aspect_ratio: aspect,
+          loop: false
+        })
+      });
+
+      if (!createRes.ok) {
+        const err = await createRes.json().catch(() => ({}));
+        throw new Error(err.detail || err.message || 'API error ' + createRes.status);
+      }
+
+      const gen = await createRes.json();
+      const genId = gen.id;
+
+      setStatus('Processing…', 'Your video is being rendered. This takes ~60–90 seconds…', 25, 'loading');
+
+      // Poll for completion
+      let elapsed = 0;
+      const pollInterval = 4000;
+      const maxWait = 300000;
+
+      while (elapsed < maxWait) {
+        await sleep(pollInterval);
+        elapsed += pollInterval;
+
+        const pollRes = await fetch('https://api.lumalabs.ai/dream-machine/v1/generations/' + genId, {
+          headers: {
+            'Authorization': 'Bearer ' + apiKey,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!pollRes.ok) continue;
+
+        const pollData = await pollRes.json();
+        const state = pollData.state;
+        const pct = Math.min(20 + Math.floor((elapsed / maxWait) * 70), 90);
+
+        if (state === 'completed' && pollData.assets && pollData.assets.video) {
+          setStatus('Done!', 'Your video is ready.', 100, 'done');
+          currentVideoUrl = pollData.assets.video;
+
+          document.getElementById('result-video').src = currentVideoUrl;
+          document.getElementById('result-meta').textContent = aspect + ' · ' + duration + 's';
+          document.getElementById('result-box').classList.add('visible');
+
+          genEntry.status = 'done';
+          genEntry.videoUrl = currentVideoUrl;
+          saveHistory();
+          renderHistory();
+          break;
+
+        } else if (state === 'failed') {
+          throw new Error(pollData.failure_reason || 'Generation failed on the server.');
+
+        } else {
+          const stateLabel = state === 'queued' ? 'Queued — waiting for a GPU slot…'
+                           : state === 'dreaming' ? 'Dreaming — rendering frames…'
+                           : 'Processing…';
+          setStatus('Processing…', stateLabel, pct, 'loading');
+        }
+      }
+
+      if (elapsed >= maxWait) throw new Error('Request timed out. Try again.');
+
+    } catch (err) {
+      setStatus('Error', err.message, 0, 'error');
+      genEntry.status = 'error';
+      saveHistory();
+      renderHistory();
+    } finally {
+      document.getElementById('gen-btn').disabled = false;
+    }
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function downloadVideo() {
+    if (!currentVideoUrl) return;
+    const a = document.createElement('a');
+    a.href = currentVideoUrl;
+    a.download = 'videogen-' + Date.now() + '.mp4';
+    a.click();
+  }
+
+  function shareVideo() {
+    if (!currentVideoUrl) return;
+    navigator.clipboard.writeText(currentVideoUrl).then(() => {
+      alert('Video URL copied to clipboard!');
+    });
+  }
+
+  function resetForm() {
+    document.getElementById('prompt').value = '';
+    document.getElementById('status-box').classList.remove('visible');
+    document.getElementById('result-box').classList.remove('visible');
+    currentVideoUrl = '';
+    document.getElementById('prompt').focus();
+  }
+
+  function saveHistory() {
+    localStorage.setItem('videogen_history', JSON.stringify(history.slice(0, 20)));
+  }
+
+  function renderHistory() {
+    if (!history.length) return;
+    document.getElementById('history-section').classList.add('visible');
+    const list = document.getElementById('history-list');
+    list.innerHTML = history.slice(0, 8).map(h => `
+      <div class="history-item">
+        <div class="history-status-dot" style="background:${
+          h.status === 'done' ? 'var(--green)' : h.status === 'error' ? 'var(--red)' : 'var(--amber)'
+        }"></div>
+        <span class="history-prompt">${escHtml(h.prompt)}</span>
+        <span class="history-time">${h.time}</span>
+        ${h.videoUrl ? `<button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;" onclick="loadHistoryVideo('${escHtml(h.videoUrl)}')">▶</button>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function loadHistoryVideo(url) {
+    currentVideoUrl = url;
+    document.getElementById('result-video').src = url;
+    document.getElementById('result-box').classList.add('visible');
+    document.getElementById('result-meta').textContent = 'From history';
+    document.querySelector('.result-box').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  init();
+</script>
+
+</body>
+</html>
