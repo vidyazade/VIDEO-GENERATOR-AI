@@ -1,4 +1,4 @@
-const LUMA_KEY = "luma-api-c81OFScGkVsMajg-Cg1wtwCC1ZF6wzwLAP7e7og8qCY";
+const LUMA_KEY = "luma-api-cTrWG92uS4CPNchb63iGeI1y3hzFX2ugZcydLhKYVZI";
 const BASE = "https://api.lumalabs.ai/dream-machine/v1/generations";
 
 export default async function handler(req, res) {
