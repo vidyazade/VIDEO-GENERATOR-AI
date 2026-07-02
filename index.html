@@ -161,8 +161,7 @@
 </footer>
 
 <script>
-  const LUMA_KEY = 'luma-api-c81OFScGkVsMajg-Cg1wtwCC1ZF6wzwLAP7e7og8qCY';
-  const LUMA_BASE = 'https://api.lumalabs.ai/dream-machine/v1/generations';
+  const PROXY = '/api/luma';
 
   let currentVideoUrl = '';
   let genHistory = JSON.parse(localStorage.getItem('vg_history') || '[]');
@@ -177,9 +176,9 @@
   }
 
   async function lumaPost(body) {
-    const r = await fetch(LUMA_BASE, {
+    const r = await fetch(PROXY, {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + LUMA_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
     let data;
@@ -188,9 +187,7 @@
   }
 
   async function lumaPoll(id) {
-    const r = await fetch(`${LUMA_BASE}/${id}`, {
-      headers: { 'Authorization': 'Bearer ' + LUMA_KEY, 'Accept': 'application/json' }
-    });
+    const r = await fetch(PROXY + '?id=' + id);
     let data;
     try { data = await r.json(); } catch(e) { data = {}; }
     return { ok: r.ok, status: r.status, data };
