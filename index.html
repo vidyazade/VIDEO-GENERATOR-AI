@@ -161,11 +161,7 @@
 </footer>
 
 <script>
-  // ── Config ──────────────────────────────────────────────
-  // API key is sent from the browser directly to Luma.
-  // This works because Luma AI DOES support CORS from browsers.
-  // Previous "Failed to fetch" was likely a network/upload issue.
-  const LUMA_KEY = atob('bHVtYS1hcGktYzgxT0ZTY0drVnNNYWpnLUNnMXd0d0NDMVpGNnd6d0xBUDdlN29nOGNZWQ==');
+  const LUMA_KEY = 'luma-api-c81OFScGkVsMajg-Cg1wtwCC1ZF6wzwLAP7e7og8qCY';
   const LUMA_BASE = 'https://api.lumalabs.ai/dream-machine/v1/generations';
 
   let currentVideoUrl = '';
@@ -183,17 +179,21 @@
   async function lumaPost(body) {
     const r = await fetch(LUMA_BASE, {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + LUMA_KEY, 'Content-Type': 'application/json' },
+      headers: { 'Authorization': 'Bearer ' + LUMA_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(body)
     });
-    return { ok: r.ok, status: r.status, data: await r.json() };
+    let data;
+    try { data = await r.json(); } catch(e) { data = { error: 'Non-JSON response from server' }; }
+    return { ok: r.ok, status: r.status, data };
   }
 
   async function lumaPoll(id) {
     const r = await fetch(`${LUMA_BASE}/${id}`, {
-      headers: { 'Authorization': 'Bearer ' + LUMA_KEY }
+      headers: { 'Authorization': 'Bearer ' + LUMA_KEY, 'Accept': 'application/json' }
     });
-    return { ok: r.ok, data: await r.json() };
+    let data;
+    try { data = await r.json(); } catch(e) { data = {}; }
+    return { ok: r.ok, status: r.status, data };
   }
 
   async function generateVideo() {
@@ -212,7 +212,11 @@
     try {
       setStatus('Submitting…', 'Sending your prompt to Luma AI…', 15, 'loading');
       const { ok, status, data: gen } = await lumaPost({ prompt, aspect_ratio: aspect, loop: false });
-      if (!ok) throw new Error(gen.detail || gen.error || `API error ${status}`);
+      console.log('Luma create response:', status, JSON.stringify(gen));
+      if (!ok) throw new Error(
+        gen.detail || gen.message || gen.error ||
+        `API error ${status}: ${JSON.stringify(gen)}`
+      );
 
       const genId = gen.id;
       setStatus('Processing…', 'Video is being rendered — takes ~60–90 seconds…', 25, 'loading');
@@ -221,8 +225,12 @@
       while (elapsed < 300000) {
         await sleep(5000);
         elapsed += 5000;
-        const { ok: pOk, data: pd } = await lumaPoll(genId);
-        if (!pOk) continue;
+        const { ok: pOk, status: pStatus, data: pd } = await lumaPoll(genId);
+        console.log('Poll response:', pStatus, pd?.state, JSON.stringify(pd));
+        if (!pOk) {
+          console.warn('Poll failed with status', pStatus, pd);
+          continue;
+        }
         const pct = Math.min(25 + Math.floor((elapsed/300000)*68), 92);
 
         if (pd.state === 'completed' && pd.assets?.video) {
@@ -243,7 +251,8 @@
         }
       }
     } catch(err) {
-      setStatus('Error', err.message, 0, 'error');
+      console.error('VideoGen error:', err);
+      setStatus('Error', err.message || 'Unknown error — check browser console (F12)', 0, 'error');
       entry.status = 'error'; saveHistory(); renderHistory();
     } finally {
       document.getElementById('gen-btn').disabled = false;
